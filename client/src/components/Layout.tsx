@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { LayoutDashboard, Globe, ScrollText, Settings, LogOut, Menu, X, Activity } from 'lucide-react';
 
 type Page = 'dashboard' | 'proxy' | 'logs' | 'settings';

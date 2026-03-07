@@ -29,6 +29,7 @@ export default function SettingsPanel() {
   };
 
   const testTelegram = async () => {
+    if (!settings) return;
     if (!settings.telegramBotToken || !settings.telegramChatId) {
       setMessage('Error: Bot Token and Chat ID required');
       return;
