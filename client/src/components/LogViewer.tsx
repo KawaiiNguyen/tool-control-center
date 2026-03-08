@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { ScrollText, Pause, Play, Trash2 } from 'lucide-react';
+import Ansi from 'ansi-to-react';
 import type { Tool } from '../types';
 import { useLogStream } from '../hooks/useSocket';
 
@@ -119,7 +120,7 @@ export default function LogViewer({ tools, initialToolId, onSendInput }: Props) 
                   : 'text-gray-300'
             }`}
           >
-            {line}
+            <Ansi>{line}</Ansi>
           </div>
         ))}
       </div>
