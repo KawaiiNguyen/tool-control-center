@@ -5,7 +5,12 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Check if we are running from the dist folder or src folder
+const envPath = __dirname.endsWith('dist') 
+  ? path.resolve(__dirname, '../../.env') 
+  : path.resolve(__dirname, '../.env');
+
+dotenv.config({ path: envPath });
 
 export const config = {
   port: parseInt(process.env.PORT || '3001', 10),
