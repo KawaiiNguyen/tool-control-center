@@ -95,7 +95,7 @@ class ProcessManager extends EventEmitter {
     const cmd = tool.type === 'python' ? 'python3' : 'node';
     const child = spawn(cmd, [tool.entryFile], {
       cwd: tool.path,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env },
     });
 
@@ -145,9 +145,14 @@ class ProcessManager extends EventEmitter {
     this.processes.set(toolId, { process: child, startedAt: Date.now(), stableTimer });
 
     child.on('exit', (code, signal) => {
-      const info = this.processes.get(toolId);
-      if (info?.stableTimer) clearTimeout(info.stableTimer);
-      this.processes.delete(toolId);
+      const currentInfo = this.processes.get(toolId);
+      if (currentInfo && currentInfo.process !== child) {
+        // Ignore old orphaned process exit events
+        return;
+      }
+
+      if (currentInfo?.stableTimer) clearTimeout(currentInfo.stableTimer);
+      if (currentInfo) this.processes.delete(toolId);
 
       const t = this.tools.get(toolId);
       if (!t) return;
@@ -226,7 +231,7 @@ class ProcessManager extends EventEmitter {
 
     const child = spawn(cmd, args, {
       cwd: tool.path,
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe'],
       env: { ...process.env },
     });
 
@@ -292,6 +297,22 @@ class ProcessManager extends EventEmitter {
 
     await this.persistRunState();
     return tool;
+  }
+
+  async sendInput(toolId: string, input: string): Promise<void> {
+    const info = this.processes.get(toolId);
+    if (!info) throw new Error('Tool is not running');
+    if (!info.process.stdin) throw new Error('Tool process has no stdin pipe');
+
+    info.process.stdin.write(input + '\n');
+
+    if (this.logBuffers.has(toolId)) {
+      const buffer = this.logBuffers.get(toolId)!;
+      const timestamped = `[${new Date().toLocaleTimeString()}] > ${input}`;
+      buffer.push(timestamped);
+      if (buffer.length > LOG_BUFFER_SIZE) buffer.shift();
+      this.emit('tool:log', { toolId, line: timestamped });
+    }
   }
 
   async restartTool(toolId: string): Promise<Tool> {

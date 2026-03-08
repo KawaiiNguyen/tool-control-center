@@ -14,7 +14,7 @@ type Page = 'dashboard' | 'proxy' | 'logs' | 'settings';
 function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
   const {
     tools, loading: toolsLoading, actionLoading,
-    startTool, stopTool, restartTool, installTool,
+    startTool, stopTool, restartTool, installTool, sendInput,
     startAll, stopAll, restartAll, scanTools,
     updateToolStatus, updateAllStatuses,
   } = useTools();
@@ -65,7 +65,7 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
         />
       )}
       {page === 'proxy' && <ProxyPanel />}
-      {page === 'logs' && <LogViewer tools={tools} initialToolId={logToolId} />}
+      {page === 'logs' && <LogViewer tools={tools} initialToolId={logToolId} onSendInput={sendInput} />}
       {page === 'settings' && <SettingsPanel />}
     </Layout>
   );

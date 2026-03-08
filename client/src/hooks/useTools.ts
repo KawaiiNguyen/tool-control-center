@@ -52,6 +52,11 @@ export function useTools() {
     } finally { setActionLoading(null); }
   }, [fetchTools]);
 
+  const sendInput = useCallback(async (id: string, input: string) => {
+    try { await api.post(`/tools/${id}/input`, { input }); }
+    catch (err) { console.error('Send input failed:', err); }
+  }, []);
+
   const startAll = useCallback(async () => {
     setActionLoading('all');
     try { await api.post('/tools/start-all'); await fetchTools(); }
@@ -92,7 +97,7 @@ export function useTools() {
 
   return {
     tools, loading, actionLoading,
-    fetchTools, startTool, stopTool, restartTool, installTool,
+    fetchTools, startTool, stopTool, restartTool, installTool, sendInput,
     startAll, stopAll, restartAll, scanTools,
     updateToolStatus, updateAllStatuses,
   };

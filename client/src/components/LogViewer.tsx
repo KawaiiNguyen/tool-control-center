@@ -6,12 +6,14 @@ import { useLogStream } from '../hooks/useSocket';
 interface Props {
   tools: Tool[];
   initialToolId?: string | null;
+  onSendInput?: (id: string, input: string) => void;
 }
 
-export default function LogViewer({ tools, initialToolId }: Props) {
+export default function LogViewer({ tools, initialToolId, onSendInput }: Props) {
   const [selectedTool, setSelectedTool] = useState<string | null>(initialToolId || null);
   const [lines, setLines] = useState<string[]>([]);
   const [paused, setPaused] = useState(false);
+  const [inputValue, setInputValue] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
   const autoScrollRef = useRef(true);
 
@@ -47,7 +49,19 @@ export default function LogViewer({ tools, initialToolId }: Props) {
     setLines([]);
     setPaused(false);
     autoScrollRef.current = true;
+    setInputValue('');
   }, [selectedTool]);
+
+  const handleInputSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedTool && inputValue.trim() && onSendInput) {
+      onSendInput(selectedTool, inputValue.trim());
+      setInputValue('');
+    }
+  };
+
+  const currentTool = tools.find(t => t.id === selectedTool);
+  const isRunning = currentTool?.status === 'running';
 
   return (
     <div>
@@ -86,7 +100,7 @@ export default function LogViewer({ tools, initialToolId }: Props) {
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="bg-gray-950 border border-gray-800 rounded-xl p-4 h-[calc(100vh-280px)] min-h-[300px] overflow-y-auto font-mono text-xs leading-5"
+        className="bg-gray-950 border border-gray-800 rounded-xl p-4 h-[calc(100vh-350px)] min-h-[300px] overflow-y-auto font-mono text-xs leading-5"
       >
         {!selectedTool && (
           <p className="text-gray-600 text-center mt-8">Select a tool to view logs</p>
@@ -110,9 +124,29 @@ export default function LogViewer({ tools, initialToolId }: Props) {
         ))}
       </div>
 
-      <div className="flex items-center justify-between mt-2 text-xs text-gray-600">
+      <div className="flex items-center justify-between mt-2 text-xs text-gray-600 mb-2">
         <span>{lines.length} lines</span>
         {paused && <span className="text-yellow-400">Paused</span>}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <form onSubmit={handleInputSubmit} className="flex-1 flex gap-2">
+          <input
+            type="text"
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            disabled={!selectedTool || !isRunning}
+            placeholder={!selectedTool ? "Select a tool first..." : isRunning ? "Type input for the bot and press Enter..." : "Tool must be running to receive input..."}
+            className="flex-1 px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 disabled:opacity-50 transition-colors"
+          />
+          <button
+            type="submit"
+            disabled={!selectedTool || !inputValue.trim() || !isRunning}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            Send
+          </button>
+        </form>
       </div>
     </div>
   );
