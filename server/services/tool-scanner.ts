@@ -36,9 +36,27 @@ async function detectEntryFromScripts(toolPath: string): Promise<{ type: 'python
   return null;
 }
 
-async function detectTool(toolPath: string, folderName: string): Promise<Tool | null> {
-  let type: 'python' | 'node' = 'python';
+async function detectTool(baseToolPath: string, folderName: string): Promise<Tool | null> {
+  let type: 'python' | 'node' | null = null;
   let entryFile = '';
+
+  let toolPath = baseToolPath;
+  try {
+    const files = await fs.readdir(baseToolPath);
+    const hasRootIndicator = files.some(f => ['package.json', 'requirements.txt', 'bot.py', 'index.js', 'main.py', 'main.js'].includes(f.toLowerCase()));
+    
+    // Dive one level deep if no obvious indicators
+    if (!hasRootIndicator) {
+       const entries = await fs.readdir(baseToolPath, { withFileTypes: true });
+       const subDirs = entries.filter(e => e.isDirectory() && !e.name.startsWith('.'));
+       const sameNameDir = subDirs.find(d => d.name.toLowerCase() === folderName.toLowerCase() || ['src', 'bot', 'app', 'build', 'dist'].includes(d.name.toLowerCase()));
+       if (sameNameDir) {
+           toolPath = path.join(baseToolPath, sameNameDir.name);
+       } else if (subDirs.length === 1) {
+           toolPath = path.join(baseToolPath, subDirs[0].name);
+       }
+    }
+  } catch {}
 
   // Check package.json first (Node.js)
   const pkgPath = path.join(toolPath, 'package.json');
@@ -55,16 +73,19 @@ async function detectTool(toolPath: string, folderName: string): Promise<Tool | 
   }
 
   // Check requirements.txt (Python)
-  if (!entryFile && await fileExists(path.join(toolPath, 'requirements.txt'))) {
+  if (!type && await fileExists(path.join(toolPath, 'requirements.txt'))) {
     type = 'python';
   }
 
   // Detect entry file by priority
   if (!entryFile) {
-    const entries = type === 'python' ? PYTHON_ENTRIES : NODE_ENTRIES;
+    const entries = (type === 'node') ? NODE_ENTRIES : (type === 'python' ? PYTHON_ENTRIES : [...NODE_ENTRIES, ...PYTHON_ENTRIES]);
     for (const entry of entries) {
       if (await fileExists(path.join(toolPath, entry))) {
         entryFile = entry;
+        if (!type) {
+            type = entry.endsWith('.js') ? 'node' : 'python';
+        }
         break;
       }
     }
@@ -83,19 +104,19 @@ async function detectTool(toolPath: string, folderName: string): Promise<Tool | 
   if (!entryFile) {
     try {
       const files = await fs.readdir(toolPath);
-      const pyFile = files.find(f => f.endsWith('.py') && !f.startsWith('setup') && !f.startsWith('__'));
       const jsFile = files.find(f => f.endsWith('.js') && !f.startsWith('.'));
-      if (pyFile) { type = 'python'; entryFile = pyFile; }
-      else if (jsFile) { type = 'node'; entryFile = jsFile; }
+      const pyFile = files.find(f => f.endsWith('.py') && !f.startsWith('setup') && !f.startsWith('__'));
+      
+      // Node priority if .js found (since it was missing before)
+      if (jsFile) { type = 'node'; entryFile = jsFile; }
+      else if (pyFile) { type = 'python'; entryFile = pyFile; }
     } catch {}
   }
 
   // If still no entry file is found, DO NOT drop the tool. We want it listed.
   // The user can configure it later or see that it crashes. Default to python bot.py.
-  if (!entryFile) {
-    type = 'python';
-    entryFile = 'bot.py';
-  }
+  if (!type) type = 'python';
+  if (!entryFile) entryFile = 'bot.py';
 
   const hasProxyFile = await fileExists(path.join(toolPath, 'proxy.txt'));
   const hasProxiesFile = await fileExists(path.join(toolPath, 'proxies.txt'));
