@@ -57,6 +57,13 @@ export function useTools() {
     catch (err) { console.error('Send input failed:', err); }
   }, []);
 
+  const updateToolConfig = useCallback(async (id: string, entryFile: string) => {
+    try {
+      await api.put(`/tools/${id}/config`, { entryFile });
+      await fetchTools();
+    } catch (err) { console.error('Failed to update config:', err); }
+  }, [fetchTools]);
+
   const startAll = useCallback(async () => {
     setActionLoading('all');
     try { await api.post('/tools/start-all'); await fetchTools(); }
@@ -97,7 +104,7 @@ export function useTools() {
 
   return {
     tools, loading, actionLoading,
-    fetchTools, startTool, stopTool, restartTool, installTool, sendInput,
+    fetchTools, startTool, stopTool, restartTool, installTool, sendInput, updateToolConfig,
     startAll, stopAll, restartAll, scanTools,
     updateToolStatus, updateAllStatuses,
   };

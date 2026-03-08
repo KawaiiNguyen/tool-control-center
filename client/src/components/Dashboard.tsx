@@ -18,9 +18,10 @@ interface Props {
   onRestartAll: () => void;
   onScan: () => void;
   onViewLogs: (id: string) => void;
+  onEditConfig: (id: string, entryFile: string) => void;
 }
 
-export default function Dashboard({ tools, loading, actionLoading, onStart, onStop, onRestart, onInstall, onStartAll, onStopAll, onRestartAll, onScan, onViewLogs }: Props) {
+export default function Dashboard({ tools, loading, actionLoading, onStart, onStop, onRestart, onInstall, onStartAll, onStopAll, onRestartAll, onScan, onViewLogs, onEditConfig }: Props) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
 
@@ -129,6 +130,7 @@ export default function Dashboard({ tools, loading, actionLoading, onStart, onSt
             onRestart={onRestart}
             onInstall={onInstall}
             onViewLogs={onViewLogs}
+            onEditConfig={onEditConfig}
             isLoading={actionLoading === tool.id || actionLoading === 'all'}
           />
         ))}

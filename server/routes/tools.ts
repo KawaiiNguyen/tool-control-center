@@ -122,6 +122,7 @@ router.put('/:id/config', async (req: AuthRequest, res: Response) => {
     const updates = req.body;
     await saveToolConfig(id, updates);
     Object.assign(tool.config, updates);
+    if (updates.entryFile) tool.entryFile = updates.entryFile;
     res.json(tool.config);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

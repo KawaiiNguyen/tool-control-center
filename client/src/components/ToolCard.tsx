@@ -1,4 +1,4 @@
-import { Play, Square, RotateCw, ScrollText, Download } from 'lucide-react';
+import { Play, Square, RotateCw, ScrollText, Download, Edit2 } from 'lucide-react';
 import type { Tool } from '../types';
 
 interface Props {
@@ -8,6 +8,7 @@ interface Props {
   onRestart: (id: string) => void;
   onInstall: (id: string, packages?: string) => void;
   onViewLogs: (id: string) => void;
+  onEditConfig: (id: string, entryFile: string) => void;
   isLoading: boolean;
 }
 
@@ -31,7 +32,7 @@ function formatUptime(ms?: number): string {
   return `${seconds}s`;
 }
 
-export default function ToolCard({ tool, onStart, onStop, onRestart, onInstall, onViewLogs, isLoading }: Props) {
+export default function ToolCard({ tool, onStart, onStop, onRestart, onInstall, onViewLogs, onEditConfig, isLoading }: Props) {
   const style = STATUS_STYLES[tool.status];
 
   return (
@@ -41,6 +42,14 @@ export default function ToolCard({ tool, onStart, onStop, onRestart, onInstall, 
         <div className="flex items-center gap-2 min-w-0">
           <div className={`w-2 h-2 rounded-full shrink-0 ${style.dot}`} />
           <h3 className="text-sm font-medium text-white truncate" title={tool.name}>{tool.name}</h3>
+          <button onClick={() => {
+            const newEntry = window.prompt(`Sửa đường dẫn file chạy cho ${tool.name}:`, tool.entryFile);
+            if (newEntry && newEntry.trim() !== tool.entryFile) {
+              onEditConfig(tool.id, newEntry.trim());
+            }
+          }} className="text-gray-500 hover:text-white transition-colors" title="Edit Entry File">
+            <Edit2 className="w-3 h-3" />
+          </button>
         </div>
         <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${
           tool.type === 'python' ? 'bg-blue-500/20 text-blue-400' : 'bg-yellow-500/20 text-yellow-400'

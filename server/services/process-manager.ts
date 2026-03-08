@@ -235,7 +235,7 @@ class ProcessManager extends EventEmitter {
       } else {
         args.push('-r', 'requirements.txt');
       }
-      args.push('--break-system-packages');
+      args.push('--break-system-packages', '--ignore-installed');
     }
 
     const child = spawn(cmd, args, {
