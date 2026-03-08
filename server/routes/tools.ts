@@ -76,7 +76,8 @@ router.post('/:id/input', async (req: AuthRequest, res: Response) => {
 router.post('/:id/install', async (req: AuthRequest, res: Response) => {
   try {
     const id = String(req.params.id);
-    const tool = await processManager.installTool(id);
+    const { packages } = req.body;
+    const tool = await processManager.installTool(id, packages);
     res.json(tool);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

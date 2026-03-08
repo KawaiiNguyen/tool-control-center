@@ -12,7 +12,7 @@ interface Props {
   onStart: (id: string) => void;
   onStop: (id: string) => void;
   onRestart: (id: string) => void;
-  onInstall: (id: string) => void;
+  onInstall: (id: string, packages?: string) => void;
   onStartAll: () => void;
   onStopAll: () => void;
   onRestartAll: () => void;

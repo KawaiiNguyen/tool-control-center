@@ -195,7 +195,7 @@ class ProcessManager extends EventEmitter {
     return tool;
   }
 
-  async installTool(toolId: string): Promise<Tool> {
+  async installTool(toolId: string, packages?: string): Promise<Tool> {
     const tool = this.tools.get(toolId);
     if (!tool) throw new Error(`Tool not found: ${toolId}`);
     if (tool.status === 'running' || tool.status === 'starting' || tool.status === 'installing') {
@@ -222,11 +222,20 @@ class ProcessManager extends EventEmitter {
     const isWin = process.platform === 'win32';
     let cmd = isWin ? 'npm.cmd' : 'npm';
     let args = ['install'];
+    if (packages && packages.trim()) {
+      args.push(...packages.trim().split(/\s+/));
+    }
 
     if (tool.type === 'python') {
       // Use python -m pip install -r requirements.txt for better compatibility
       cmd = isWin ? 'python' : 'python3';
-      args = ['-m', 'pip', 'install', '-r', 'requirements.txt', '--break-system-packages'];
+      args = ['-m', 'pip', 'install'];
+      if (packages && packages.trim()) {
+        args.push(...packages.trim().split(/\s+/));
+      } else {
+        args.push('-r', 'requirements.txt');
+      }
+      args.push('--break-system-packages');
     }
 
     const child = spawn(cmd, args, {

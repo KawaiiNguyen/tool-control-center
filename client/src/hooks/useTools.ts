@@ -44,10 +44,10 @@ export function useTools() {
     } finally { setActionLoading(null); }
   }, [fetchTools]);
 
-  const installTool = useCallback(async (id: string) => {
+  const installTool = useCallback(async (id: string, packages?: string) => {
     setActionLoading(id);
     try {
-      await api.post(`/tools/${id}/install`);
+      await api.post(`/tools/${id}/install`, { packages });
       await fetchTools();
     } finally { setActionLoading(null); }
   }, [fetchTools]);

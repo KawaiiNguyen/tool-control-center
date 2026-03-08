@@ -6,7 +6,7 @@ interface Props {
   onStart: (id: string) => void;
   onStop: (id: string) => void;
   onRestart: (id: string) => void;
-  onInstall: (id: string) => void;
+  onInstall: (id: string, packages?: string) => void;
   onViewLogs: (id: string) => void;
   isLoading: boolean;
 }
@@ -84,7 +84,13 @@ export default function ToolCard({ tool, onStart, onStop, onRestart, onInstall, 
               className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-300 hover:bg-green-500/20 hover:text-green-400 disabled:opacity-50 transition-colors">
               <Play className="w-3 h-3" /> Start
             </button>
-            <button onClick={() => onInstall(tool.id)} disabled={isLoading || tool.status === 'starting' || tool.status === 'installing'}
+            <button onClick={() => {
+              const cmdText = tool.type === 'python' ? 'requirements.txt' : 'package.json';
+              const pkg = window.prompt(`Nhập tên package cần cài thêm (nếu có).\nĐể trống để tự động cài từ ${cmdText}:`);
+              if (pkg !== null) {
+                onInstall(tool.id, pkg);
+              }
+            }} disabled={isLoading || tool.status === 'starting' || tool.status === 'installing'}
               className="flex items-center justify-center px-2 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-300 hover:bg-blue-500/20 hover:text-blue-400 disabled:opacity-50 transition-colors"
               title="Install Dependencies"
             >
