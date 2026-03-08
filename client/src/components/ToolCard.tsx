@@ -1,4 +1,4 @@
-import { Play, Square, RotateCw, ScrollText } from 'lucide-react';
+import { Play, Square, RotateCw, ScrollText, Download } from 'lucide-react';
 import type { Tool } from '../types';
 
 interface Props {
@@ -6,6 +6,7 @@ interface Props {
   onStart: (id: string) => void;
   onStop: (id: string) => void;
   onRestart: (id: string) => void;
+  onInstall: (id: string) => void;
   onViewLogs: (id: string) => void;
   isLoading: boolean;
 }
@@ -15,6 +16,7 @@ const STATUS_STYLES = {
   stopped: { dot: 'bg-gray-500', bg: 'border-gray-700', text: 'text-gray-400' },
   error: { dot: 'bg-red-500', bg: 'border-red-500/20', text: 'text-red-400' },
   starting: { dot: 'bg-yellow-500 animate-pulse', bg: 'border-yellow-500/20', text: 'text-yellow-400' },
+  installing: { dot: 'bg-purple-500 animate-pulse', bg: 'border-purple-500/20', text: 'text-purple-400' },
 };
 
 function formatUptime(ms?: number): string {
@@ -29,7 +31,7 @@ function formatUptime(ms?: number): string {
   return `${seconds}s`;
 }
 
-export default function ToolCard({ tool, onStart, onStop, onRestart, onViewLogs, isLoading }: Props) {
+export default function ToolCard({ tool, onStart, onStop, onRestart, onInstall, onViewLogs, isLoading }: Props) {
   const style = STATUS_STYLES[tool.status];
 
   return (
@@ -77,10 +79,18 @@ export default function ToolCard({ tool, onStart, onStop, onRestart, onViewLogs,
             </button>
           </>
         ) : (
-          <button onClick={() => onStart(tool.id)} disabled={isLoading}
-            className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-300 hover:bg-green-500/20 hover:text-green-400 disabled:opacity-50 transition-colors">
-            <Play className="w-3 h-3" /> Start
-          </button>
+          <>
+            <button onClick={() => onStart(tool.id)} disabled={isLoading || tool.status === 'starting' || tool.status === 'installing'}
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-300 hover:bg-green-500/20 hover:text-green-400 disabled:opacity-50 transition-colors">
+              <Play className="w-3 h-3" /> Start
+            </button>
+            <button onClick={() => onInstall(tool.id)} disabled={isLoading || tool.status === 'starting' || tool.status === 'installing'}
+              className="flex items-center justify-center px-2 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-300 hover:bg-blue-500/20 hover:text-blue-400 disabled:opacity-50 transition-colors"
+              title="Install Dependencies"
+            >
+              <Download className="w-3 h-3" />
+            </button>
+          </>
         )}
         <button onClick={() => onViewLogs(tool.id)}
           className="flex items-center justify-center px-2 py-1.5 text-xs rounded-lg bg-gray-800 text-gray-300 hover:bg-blue-500/20 hover:text-blue-400 transition-colors">

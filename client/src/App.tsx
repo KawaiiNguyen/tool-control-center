@@ -14,7 +14,7 @@ type Page = 'dashboard' | 'proxy' | 'logs' | 'settings';
 function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
   const {
     tools, loading: toolsLoading, actionLoading,
-    startTool, stopTool, restartTool,
+    startTool, stopTool, restartTool, installTool,
     startAll, stopAll, restartAll, scanTools,
     updateToolStatus, updateAllStatuses,
   } = useTools();
@@ -56,6 +56,7 @@ function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
           onStart={startTool}
           onStop={stopTool}
           onRestart={restartTool}
+          onInstall={installTool}
           onStartAll={startAll}
           onStopAll={stopAll}
           onRestartAll={restartAll}

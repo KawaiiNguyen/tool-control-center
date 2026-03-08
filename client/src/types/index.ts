@@ -4,7 +4,7 @@ export interface Tool {
   path: string;
   type: 'python' | 'node';
   entryFile: string;
-  status: 'running' | 'stopped' | 'error' | 'starting';
+  status: 'running' | 'stopped' | 'error' | 'starting' | 'installing';
   pid?: number;
   uptime?: number;
   startedAt?: number;

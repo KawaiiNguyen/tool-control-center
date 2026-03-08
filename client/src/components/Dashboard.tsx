@@ -12,6 +12,7 @@ interface Props {
   onStart: (id: string) => void;
   onStop: (id: string) => void;
   onRestart: (id: string) => void;
+  onInstall: (id: string) => void;
   onStartAll: () => void;
   onStopAll: () => void;
   onRestartAll: () => void;
@@ -19,7 +20,7 @@ interface Props {
   onViewLogs: (id: string) => void;
 }
 
-export default function Dashboard({ tools, loading, actionLoading, onStart, onStop, onRestart, onStartAll, onStopAll, onRestartAll, onScan, onViewLogs }: Props) {
+export default function Dashboard({ tools, loading, actionLoading, onStart, onStop, onRestart, onInstall, onStartAll, onStopAll, onRestartAll, onScan, onViewLogs }: Props) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
 
@@ -126,6 +127,7 @@ export default function Dashboard({ tools, loading, actionLoading, onStart, onSt
             onStart={onStart}
             onStop={onStop}
             onRestart={onRestart}
+            onInstall={onInstall}
             onViewLogs={onViewLogs}
             isLoading={actionLoading === tool.id || actionLoading === 'all'}
           />

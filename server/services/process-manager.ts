@@ -190,6 +190,71 @@ class ProcessManager extends EventEmitter {
     return tool;
   }
 
+  async installTool(toolId: string): Promise<Tool> {
+    const tool = this.tools.get(toolId);
+    if (!tool) throw new Error(`Tool not found: ${toolId}`);
+    if (tool.status === 'running' || tool.status === 'starting' || tool.status === 'installing') {
+      throw new Error(`Tool cannot be installed while ${tool.status}`);
+    }
+
+    tool.status = 'installing';
+    this.emit('tool:status', tool);
+
+    if (!this.logBuffers.has(toolId)) {
+      this.logBuffers.set(toolId, []);
+    }
+
+    const addLog = (line: string) => {
+      const buffer = this.logBuffers.get(toolId)!;
+      const timestamped = `[${new Date().toLocaleTimeString()}] ${line}`;
+      buffer.push(timestamped);
+      if (buffer.length > LOG_BUFFER_SIZE) buffer.shift();
+      this.emit('tool:log', { toolId, line: timestamped });
+    };
+
+    addLog('Starting dependency installation...');
+
+    const isWin = process.platform === 'win32';
+    let cmd = isWin ? 'npm.cmd' : 'npm';
+    let args = ['install'];
+
+    if (tool.type === 'python') {
+      // Use python -m pip install -r requirements.txt for better compatibility
+      cmd = isWin ? 'python' : 'python3';
+      args = ['-m', 'pip', 'install', '-r', 'requirements.txt'];
+    }
+
+    const child = spawn(cmd, args, {
+      cwd: tool.path,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env },
+    });
+
+    child.stdout?.on('data', (data: Buffer) => {
+      const lines = data.toString().split('\n').filter(l => l.trim());
+      lines.forEach(addLog);
+    });
+
+    child.stderr?.on('data', (data: Buffer) => {
+      const lines = data.toString().split('\n').filter(l => l.trim());
+      lines.forEach(line => addLog(`[INSTALL] ${line}`));
+    });
+
+    child.on('exit', (code, signal) => {
+      if (code === 0) {
+        addLog('Installation successful.');
+        tool.status = 'stopped';
+      } else {
+        addLog(`Installation failed (code: ${code}, signal: ${signal})`);
+        tool.status = 'error';
+        tool.lastError = `Install failed with code ${code}`;
+      }
+      this.emit('tool:status', tool);
+    });
+
+    return tool;
+  }
+
   async stopTool(toolId: string): Promise<Tool> {
     const tool = this.tools.get(toolId);
     if (!tool) throw new Error(`Tool not found: ${toolId}`);

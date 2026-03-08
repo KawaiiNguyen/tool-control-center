@@ -44,6 +44,14 @@ export function useTools() {
     } finally { setActionLoading(null); }
   }, [fetchTools]);
 
+  const installTool = useCallback(async (id: string) => {
+    setActionLoading(id);
+    try {
+      await api.post(`/tools/${id}/install`);
+      await fetchTools();
+    } finally { setActionLoading(null); }
+  }, [fetchTools]);
+
   const startAll = useCallback(async () => {
     setActionLoading('all');
     try { await api.post('/tools/start-all'); await fetchTools(); }
@@ -84,7 +92,7 @@ export function useTools() {
 
   return {
     tools, loading, actionLoading,
-    fetchTools, startTool, stopTool, restartTool,
+    fetchTools, startTool, stopTool, restartTool, installTool,
     startAll, stopAll, restartAll, scanTools,
     updateToolStatus, updateAllStatuses,
   };
