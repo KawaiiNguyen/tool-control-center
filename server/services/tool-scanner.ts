@@ -15,27 +15,21 @@ async function fileExists(filePath: string): Promise<boolean> {
   }
 }
 
-async function detectEntryFromBat(toolPath: string): Promise<{ type: 'python' | 'node'; entry: string } | null> {
+async function detectEntryFromScripts(toolPath: string): Promise<{ type: 'python' | 'node'; entry: string } | null> {
   try {
     const files = await fs.readdir(toolPath);
-    const batFiles = files.filter(f => f.endsWith('.bat'));
-    for (const bat of batFiles) {
-      const content = await fs.readFile(path.join(toolPath, bat), 'utf-8');
+    const scripts = files.filter(f => f.endsWith('.bat') || f.endsWith('.sh') || f.endsWith('.cmd'));
+    for (const script of scripts) {
+      const content = await fs.readFile(path.join(toolPath, script), 'utf-8');
       // Check for python command
-      const pyMatch = content.match(/python[3]?\s+(\S+\.py)/i);
+      const pyMatch = content.match(/python[3]?\s+([^\s&|]+\.py)/i);
       if (pyMatch) {
-        const entry = pyMatch[1];
-        if (await fileExists(path.join(toolPath, entry))) {
-          return { type: 'python', entry };
-        }
+         return { type: 'python', entry: pyMatch[1] };
       }
       // Check for node command
-      const nodeMatch = content.match(/node\s+(\S+\.js)/i);
+      const nodeMatch = content.match(/node\s+([^\s&|]+\.js)/i);
       if (nodeMatch) {
-        const entry = nodeMatch[1];
-        if (await fileExists(path.join(toolPath, entry))) {
-          return { type: 'node', entry };
-        }
+         return { type: 'node', entry: nodeMatch[1] };
       }
     }
   } catch {}
@@ -53,6 +47,10 @@ async function detectTool(toolPath: string, folderName: string): Promise<Tool | 
       const pkg = JSON.parse(await fs.readFile(pkgPath, 'utf-8'));
       type = 'node';
       entryFile = pkg.main || '';
+      if (!entryFile && pkg.scripts && pkg.scripts.start) {
+        const startMatch = pkg.scripts.start.match(/node\s+([^\s&|]+)/i);
+        if (startMatch) entryFile = startMatch[1];
+      }
     } catch {}
   }
 
@@ -72,12 +70,12 @@ async function detectTool(toolPath: string, folderName: string): Promise<Tool | 
     }
   }
 
-  // Fallback: parse .bat files
+  // Fallback: parse .bat/.sh files
   if (!entryFile) {
-    const batResult = await detectEntryFromBat(toolPath);
-    if (batResult) {
-      type = batResult.type;
-      entryFile = batResult.entry;
+    const scriptResult = await detectEntryFromScripts(toolPath);
+    if (scriptResult) {
+      type = scriptResult.type;
+      entryFile = scriptResult.entry;
     }
   }
 
@@ -92,7 +90,12 @@ async function detectTool(toolPath: string, folderName: string): Promise<Tool | 
     } catch {}
   }
 
-  if (!entryFile) return null;
+  // If still no entry file is found, DO NOT drop the tool. We want it listed.
+  // The user can configure it later or see that it crashes. Default to python bot.py.
+  if (!entryFile) {
+    type = 'python';
+    entryFile = 'bot.py';
+  }
 
   const hasProxyFile = await fileExists(path.join(toolPath, 'proxy.txt'));
   const hasProxiesFile = await fileExists(path.join(toolPath, 'proxies.txt'));
