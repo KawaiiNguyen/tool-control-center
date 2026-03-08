@@ -221,7 +221,7 @@ class ProcessManager extends EventEmitter {
     if (tool.type === 'python') {
       // Use python -m pip install -r requirements.txt for better compatibility
       cmd = isWin ? 'python' : 'python3';
-      args = ['-m', 'pip', 'install', '-r', 'requirements.txt'];
+      args = ['-m', 'pip', 'install', '-r', 'requirements.txt', '--break-system-packages'];
     }
 
     const child = spawn(cmd, args, {
