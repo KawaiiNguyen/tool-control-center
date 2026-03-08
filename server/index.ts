@@ -33,7 +33,7 @@ app.use(express.json());
 
 // Serve frontend in production
 if (config.isProduction) {
-  const clientDist = path.resolve(__dirname, '../client/dist');
+  const clientDist = path.resolve(__dirname, '../../client/dist');
   app.use(express.static(clientDist));
 }
 
@@ -98,7 +98,7 @@ setInterval(() => {
 
 // Serve frontend for all non-API routes in production
 if (config.isProduction) {
-  const clientDist = path.resolve(__dirname, '../client/dist');
+  const clientDist = path.resolve(__dirname, '../../client/dist');
   app.get('*', (_req, res) => {
     res.sendFile(path.join(clientDist, 'index.html'));
   });
