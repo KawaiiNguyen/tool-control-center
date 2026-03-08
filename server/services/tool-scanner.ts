@@ -125,6 +125,8 @@ export async function scanTools(toolsDir: string): Promise<Tool[]> {
   const savedConfigs = await getToolConfigs();
 
   try {
+    // Create dir if not exists
+    await fs.mkdir(toolsDir, { recursive: true });
     const entries = await fs.readdir(toolsDir, { withFileTypes: true });
     const folders = entries.filter(e => e.isDirectory());
 

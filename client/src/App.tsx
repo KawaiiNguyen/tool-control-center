@@ -11,8 +11,7 @@ import SettingsPanel from './components/SettingsPanel';
 
 type Page = 'dashboard' | 'proxy' | 'logs' | 'settings';
 
-function App() {
-  const { isAuthenticated, login, logout, loading: authLoading, error: authError } = useAuth();
+function AuthenticatedApp({ onLogout }: { onLogout: () => void }) {
   const {
     tools, loading: toolsLoading, actionLoading,
     startTool, stopTool, restartTool,
@@ -37,10 +36,6 @@ function App() {
     setPage('logs');
   };
 
-  if (!isAuthenticated) {
-    return <LoginPage onLogin={login} loading={authLoading} error={authError} />;
-  }
-
   const running = tools.filter(t => t.status === 'running').length;
   const errors = tools.filter(t => t.status === 'error').length;
 
@@ -48,7 +43,7 @@ function App() {
     <Layout
       currentPage={page}
       onPageChange={setPage}
-      onLogout={logout}
+      onLogout={onLogout}
       runningCount={running}
       totalCount={tools.length}
       errorCount={errors}
@@ -73,6 +68,16 @@ function App() {
       {page === 'settings' && <SettingsPanel />}
     </Layout>
   );
+}
+
+function App() {
+  const { isAuthenticated, login, logout, loading: authLoading, error: authError } = useAuth();
+
+  if (!isAuthenticated) {
+    return <LoginPage onLogin={login} loading={authLoading} error={authError} />;
+  }
+
+  return <AuthenticatedApp onLogout={logout} />;
 }
 
 export default App;
