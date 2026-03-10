@@ -1,5 +1,6 @@
 import { ChildProcess, spawn } from 'child_process';
 import { EventEmitter } from 'events';
+import { watch, type FSWatcher } from 'fs';
 import type { Tool } from '../types/index.js';
 import { scanTools } from './tool-scanner.js';
 import { saveRunState, getRunState } from './data-store.js';
@@ -21,9 +22,45 @@ class ProcessManager extends EventEmitter {
   private logBuffers: Map<string, string[]> = new Map();
   private restartTimers: Map<string, NodeJS.Timeout> = new Map();
   private scanInterval: NodeJS.Timeout | null = null;
+  private fsWatcher: FSWatcher | null = null;
+  private watchDebounce: NodeJS.Timeout | null = null;
 
   async init(): Promise<void> {
     await this.scan();
+
+    // Periodic re-scan mỗi 30 giây để phát hiện tool mới
+    this.scanInterval = setInterval(async () => {
+      try {
+        const before = this.tools.size;
+        await this.scan();
+        const after = this.tools.size;
+        if (after > before) {
+          console.log(`[auto-discovery] Found ${after - before} new tool(s). Total: ${after}`);
+        }
+      } catch (err) {
+        console.error('[auto-discovery] Periodic scan error:', err);
+      }
+    }, 30000);
+
+    // fs.watch cho real-time detection (debounced 3s)
+    try {
+      this.fsWatcher = watch(config.toolsDir, { persistent: false }, (_eventType, filename) => {
+        if (!filename) return;
+        if (this.watchDebounce) clearTimeout(this.watchDebounce);
+        this.watchDebounce = setTimeout(async () => {
+          try {
+            console.log(`[auto-discovery] Detected change in ${filename}, rescanning...`);
+            await this.scan();
+          } catch (err) {
+            console.error('[auto-discovery] Watch scan error:', err);
+          }
+        }, 3000);
+      });
+      console.log(`[auto-discovery] Watching ${config.toolsDir} for new tools`);
+    } catch (err) {
+      console.log('[auto-discovery] fs.watch not available, using interval scan only');
+    }
+
     // Restore previously running tools
     const runState = await getRunState();
     if (runState.runningToolIds.length > 0) {
@@ -392,6 +429,8 @@ class ProcessManager extends EventEmitter {
   async shutdown(): Promise<void> {
     console.log('Shutting down all tool processes...');
     if (this.scanInterval) clearInterval(this.scanInterval);
+    if (this.fsWatcher) { this.fsWatcher.close(); this.fsWatcher = null; }
+    if (this.watchDebounce) clearTimeout(this.watchDebounce);
     for (const [, timer] of this.restartTimers) clearTimeout(timer);
     this.restartTimers.clear();
 

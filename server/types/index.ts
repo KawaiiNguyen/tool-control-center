@@ -20,6 +20,8 @@ export interface ToolConfig {
   hasProxiesFile: boolean;
   hasAccountsFile: boolean;
   entryFile: string;
+  // Đường dẫn thực tế của proxy files (để apply đúng vị trí)
+  proxyPaths: string[];
 }
 
 export interface WebshareProxy {

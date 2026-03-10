@@ -67,14 +67,25 @@ export async function applyProxiesToTools(
   for (const tool of tools) {
     try {
       let wrote = false;
-      if (tool.config.hasProxyFile) {
-        await writeProxyFile(path.join(tool.path, 'proxy.txt'), content);
-        wrote = true;
+
+      // Ưu tiên ghi vào proxyPaths (chính xác từ scanner)
+      if (tool.config.proxyPaths && tool.config.proxyPaths.length > 0) {
+        for (const proxyPath of tool.config.proxyPaths) {
+          await writeProxyFile(proxyPath, content);
+          wrote = true;
+        }
+      } else {
+        // Fallback: logic cũ cho backward compatibility
+        if (tool.config.hasProxyFile) {
+          await writeProxyFile(path.join(tool.path, 'proxy.txt'), content);
+          wrote = true;
+        }
+        if (tool.config.hasProxiesFile) {
+          await writeProxyFile(path.join(tool.path, 'proxies.txt'), content);
+          wrote = true;
+        }
       }
-      if (tool.config.hasProxiesFile) {
-        await writeProxyFile(path.join(tool.path, 'proxies.txt'), content);
-        wrote = true;
-      }
+
       if (wrote) updated.push(tool.id);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -88,6 +99,15 @@ export async function applyProxiesToTools(
 export async function readCurrentProxies(tools: Tool[]): Promise<string[]> {
   // Read from first tool that has a proxy file
   for (const tool of tools) {
+    // Ưu tiên proxyPaths
+    if (tool.config.proxyPaths && tool.config.proxyPaths.length > 0) {
+      try {
+        const content = await fs.readFile(tool.config.proxyPaths[0], 'utf-8');
+        return content.split('\n').filter(l => l.trim());
+      } catch {}
+    }
+
+    // Fallback
     const file = tool.config.hasProxyFile
       ? path.join(tool.path, 'proxy.txt')
       : tool.config.hasProxiesFile

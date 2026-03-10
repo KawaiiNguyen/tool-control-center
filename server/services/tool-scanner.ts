@@ -123,13 +123,27 @@ async function detectTool(baseToolPath: string, folderName: string): Promise<Too
   const hasAccountsTxt = await fileExists(path.join(toolPath, 'accounts.txt'));
   const hasAccountsJson = await fileExists(path.join(toolPath, 'accounts.json'));
 
+  // Tìm TẤT CẢ proxy files (root + data/ subfolder)
+  const proxyPaths: string[] = [];
+  const proxyNames = ['proxy.txt', 'proxies.txt'];
+  const searchDirs = [toolPath, path.join(toolPath, 'data')];
+  for (const dir of searchDirs) {
+    for (const name of proxyNames) {
+      const fullPath = path.join(dir, name);
+      if (await fileExists(fullPath)) {
+        proxyPaths.push(fullPath);
+      }
+    }
+  }
+
   const toolConfig: ToolConfig = {
     autoRestart: true,
     maxRetries: 3,
-    hasProxyFile,
-    hasProxiesFile,
+    hasProxyFile: hasProxyFile || proxyPaths.length > 0,
+    hasProxiesFile: hasProxiesFile || proxyPaths.length > 0,
     hasAccountsFile: hasAccountsTxt || hasAccountsJson,
     entryFile,
+    proxyPaths,
   };
 
   return {
